@@ -37,6 +37,8 @@ import {
   Clock,
 } from "lucide-react";
 import { useDarkMode } from "@/contexts/DarkModeContext";
+import OrderCalendar from "@/components/OrderCalendar";
+import PendingReviewsDialog from "@/components/PendingReviewsDialog";
 
 const Dashboard = () => {
   const { isDarkMode } = useDarkMode();
@@ -50,9 +52,11 @@ const Dashboard = () => {
     pendingConsultations: 0,
     activeWebinars: 0,
     totalProducts: 0,
+    totalPendingReviews: 0,
   });
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [isPendingReviewsOpen, setIsPendingReviewsOpen] = useState(false);
 
   useEffect(() => {
     fetchStats();
@@ -106,6 +110,10 @@ const Dashboard = () => {
       const products = productsData.data || [];
       const totalProducts = products?.length || 0;
 
+      // Fetch pending reviews count
+      const pendingReviewsResponse = await api.admin.services.getPendingReviews();
+      const totalPendingReviews = pendingReviewsResponse.success ? (pendingReviewsResponse.data?.length || 0) : 0;
+
       setStats({
         totalServices,
         avgRating: Number(avgRating.toFixed(1)),
@@ -116,6 +124,7 @@ const Dashboard = () => {
         pendingConsultations,
         activeWebinars,
         totalProducts,
+        totalPendingReviews,
       });
     } catch (error) {
       console.error("Error fetching stats:", error);
@@ -349,6 +358,18 @@ const Dashboard = () => {
             </CardContent>
           </Card>
 
+          {/* Service Orders Fulfillment Calendar */}
+          <div className="md:col-span-2 lg:col-span-3 space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-bold text-black dark:text-white flex items-center gap-2">
+                <Calendar className="h-5 w-5 text-blue-500" />
+                Service Fulfillment Schedule
+              </h2>
+              <Badge variant="outline" className="border-blue-500 text-blue-500 h-6">Live Schedule</Badge>
+            </div>
+            <OrderCalendar />
+          </div>
+
           {/* Recent Activity */}
           <Card className="group relative overflow-hidden bg-gradient-to-br from-gray-200/50 to-gray-300/50 dark:from-gray-800/50 dark:to-gray-900/50 border-gray-300 dark:border-gray-700 hover:border-orange-500/50 backdrop-blur-sm shadow-lg hover:shadow-2xl transition-all duration-500 transform hover:scale-[1.02] md:col-span-2 lg:col-span-3">
             <div className="absolute inset-0 bg-gradient-to-br from-orange-500/5 to-yellow-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
@@ -369,6 +390,17 @@ const Dashboard = () => {
             </CardHeader>
             <CardContent className="relative">
               <div className="space-y-3">
+                <div
+                  onClick={() => setIsPendingReviewsOpen(true)}
+                  className={`flex items-center gap-3 p-3 ${stats.totalPendingReviews > 0 ? 'bg-amber-500/10 dark:bg-amber-500/20 border-amber-500/30' : 'bg-gray-300/30 dark:bg-gray-700/30 border-transparent'} border rounded-lg cursor-pointer hover:bg-amber-500/10 transition-all group`}
+                >
+                  <div className={`w-2 h-2 ${stats.totalPendingReviews > 0 ? 'bg-amber-500 animate-pulse' : 'bg-gray-400'} rounded-full`}></div>
+                  <div className="flex-1">
+                    <p className={`text-sm font-bold ${stats.totalPendingReviews > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-gray-700 dark:text-gray-300'}`}>Review Moderation</p>
+                    <p className="text-xs text-gray-500">{stats.totalPendingReviews} reviews awaiting approval</p>
+                  </div>
+                  <MessageSquare className={`h-4 w-4 ${stats.totalPendingReviews > 0 ? 'text-amber-500' : 'text-gray-400'} group-hover:scale-110 transition-transform`} />
+                </div>
                 <div className="flex items-center gap-3 p-3 bg-gray-300/30 dark:bg-gray-700/30 rounded-lg">
                   <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                   <div className="flex-1">
@@ -395,6 +427,12 @@ const Dashboard = () => {
           </Card>
         </div>
       </div>
+
+      <PendingReviewsDialog
+        open={isPendingReviewsOpen}
+        onOpenChange={setIsPendingReviewsOpen}
+        onRefresh={fetchStats}
+      />
     </div>
   );
 };

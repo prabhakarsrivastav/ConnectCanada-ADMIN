@@ -172,6 +172,63 @@ export const api = {
         }
         return response.json();
       },
+
+      getReviews: async (serviceId: string) => {
+        const response = await fetch(`${API_BASE_URL}/admin/services/${serviceId}/reviews`, {
+          headers: getAuthHeaders(),
+        });
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || 'Failed to fetch reviews');
+        }
+        return response.json();
+      },
+      getPendingReviews: async () => {
+        const response = await fetch(`${API_BASE_URL}/admin/services/reviews/pending`, {
+          headers: getAuthHeaders(),
+        });
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || 'Failed to fetch pending reviews');
+        }
+        return response.json();
+      },
+
+      addReview: async (serviceId: string, reviewData: any) => {
+        const response = await fetch(`${API_BASE_URL}/admin/services/${serviceId}/reviews`, {
+          method: 'POST',
+          headers: getAuthHeaders(),
+          body: JSON.stringify(reviewData),
+        });
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || 'Failed to add review');
+        }
+        return response.json();
+      },
+
+      deleteReview: async (reviewId: string) => {
+        const response = await fetch(`${API_BASE_URL}/admin/services/reviews/${reviewId}`, {
+          method: 'DELETE',
+          headers: getAuthHeaders(),
+        });
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || 'Failed to delete review');
+        }
+        return response.json();
+      },
+      approveReview: async (reviewId: string) => {
+        const response = await fetch(`${API_BASE_URL}/admin/services/reviews/${reviewId}/approve`, {
+          method: 'PUT',
+          headers: getAuthHeaders(),
+        });
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || 'Failed to approve review');
+        }
+        return response.json();
+      },
     },
     // Payment endpoints (admin)
     payments: {
@@ -363,21 +420,21 @@ export const authHelpers = {
   isAuthenticated: () => {
     const token = getAuthToken();
     const tokenTime = localStorage.getItem('authTokenTime');
-    
+
     if (!token || !tokenTime) {
       return false;
     }
-    
+
     // Check if token is older than 24 hours (adjust as needed)
     const tokenAge = Date.now() - parseInt(tokenTime);
     const maxAge = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
-    
+
     if (tokenAge > maxAge) {
       // Token expired, remove it
       authHelpers.removeToken();
       return false;
     }
-    
+
     return true;
   },
 
@@ -385,10 +442,10 @@ export const authHelpers = {
   shouldRefreshToken: () => {
     const tokenTime = localStorage.getItem('authTokenTime');
     if (!tokenTime) return false;
-    
+
     const tokenAge = Date.now() - parseInt(tokenTime);
     const refreshThreshold = 22 * 60 * 60 * 1000; // 22 hours
-    
+
     return tokenAge > refreshThreshold;
   },
 };

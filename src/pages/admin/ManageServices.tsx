@@ -25,9 +25,11 @@ import {
   Users,
   Clock,
   Award,
+  MessageSquare,
 } from "lucide-react";
 import { toast } from "sonner";
 import ServiceDialog from "@/components/ServiceDialog";
+import ReviewManagementDialog from "@/components/ReviewManagementDialog";
 import { api } from "@/lib/api";
 import { useDarkMode } from "@/contexts/DarkModeContext";
 
@@ -54,6 +56,8 @@ const ManageServices = () => {
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingService, setEditingService] = useState<Service | null>(null);
+  const [reviewsDialogOpen, setReviewsDialogOpen] = useState(false);
+  const [selectedService, setSelectedService] = useState<Service | null>(null);
 
   // New state variables for enhanced functionality
   const [searchTerm, setSearchTerm] = useState("");
@@ -85,9 +89,9 @@ const ManageServices = () => {
   const filteredServices = useMemo(() => {
     return services.filter(service => {
       const matchesSearch = service.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          service.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          service.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          service.consultant.toLowerCase().includes(searchTerm.toLowerCase());
+        service.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        service.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        service.consultant.toLowerCase().includes(searchTerm.toLowerCase());
 
       const matchesCategory = categoryFilter === 'all' || service.category === categoryFilter;
       const matchesStatus = statusFilter === 'all' || service.status === statusFilter;
@@ -314,8 +318,8 @@ const ManageServices = () => {
                 {searchTerm || categoryFilter !== 'all' ? 'No services found' : 'No services yet'}
               </h3>
               <p className="text-gray-400 mb-4">
-                {searchTerm || categoryFilter !== 'all' 
-                  ? 'Try adjusting your search or filter criteria' 
+                {searchTerm || categoryFilter !== 'all'
+                  ? 'Try adjusting your search or filter criteria'
                   : 'Create your first service to get started'
                 }
               </p>
@@ -349,11 +353,10 @@ const ManageServices = () => {
                         </span>
                         <Badge
                           variant={service.status === 'active' ? 'default' : 'secondary'}
-                          className={`text-xs ${
-                            service.status === 'active'
+                          className={`text-xs ${service.status === 'active'
                               ? 'bg-green-500/20 text-green-400 border-green-500/30'
                               : 'bg-red-500/20 text-red-400 border-red-500/30'
-                          }`}
+                            }`}
                         >
                           {service.status}
                         </Badge>
@@ -420,6 +423,18 @@ const ManageServices = () => {
                       Edit
                     </Button>
                     <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setSelectedService(service);
+                        setReviewsDialogOpen(true);
+                      }}
+                      className="flex-1 border-amber-500/30 text-amber-500 hover:bg-amber-500/10 hover:border-amber-500/50 transition-all duration-300"
+                    >
+                      <MessageSquare className="h-4 w-4 mr-1" />
+                      Reviews
+                    </Button>
+                    <Button
                       variant="destructive"
                       size="sm"
                       onClick={() => handleDelete(service._id)}
@@ -440,6 +455,13 @@ const ManageServices = () => {
         open={dialogOpen}
         onOpenChange={handleDialogClose}
         service={editingService}
+      />
+
+      <ReviewManagementDialog
+        open={reviewsDialogOpen}
+        onOpenChange={setReviewsDialogOpen}
+        service={selectedService}
+        onRefresh={fetchServices}
       />
     </div>
   );
